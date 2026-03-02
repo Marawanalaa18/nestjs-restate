@@ -6,7 +6,7 @@
     "author": "Zakaria O.I.A <codeautocracy@gmail.com>",
     "repository": {
         "type": "git",
-        "url": "https://github.com/ZackAutocracy/nestjs-restate"
+        "url": "git+https://github.com/ZackAutocracy/nestjs-restate.git"
     },
     "keywords": [
         "nestjs",
@@ -33,7 +33,7 @@
     },
     "main": "./dist/index.cjs",
     "module": "./dist/index.mjs",
-    "types": "./dist/index.d.ts",
+    "types": "./dist/index.d.cts",
     "files": [
         "dist",
         "README.md",
