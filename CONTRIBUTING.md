@@ -1,6 +1,10 @@
-# Development
+# Contributing
 
-## Prerequisites
+Thank you for your interest in contributing to **nestjs-restate**! This guide covers everything you need to get started.
+
+## Development Setup
+
+### Prerequisites
 
 - [mise](https://mise.jdx.dev/) — manages Node.js version
 - [Docker](https://www.docker.com/) — runs the Restate server
@@ -10,7 +14,7 @@ mise install        # Install Node.js 22
 yarn install        # Install dependencies
 ```
 
-## Commands
+### Commands
 
 | Command | Description |
 | --- | --- |
@@ -25,7 +29,7 @@ yarn install        # Install dependencies
 | `yarn check:all` | Run all checks (lint, types, build, test, exports, package) |
 | `yarn example:client` | Run SDK client against the example app |
 
-## Running the Example App
+### Running the Example App
 
 The `example/` directory contains a working NestJS app that uses the library.
 
@@ -42,7 +46,7 @@ yarn example
 
 Once running, the example registers itself with the Restate server automatically.
 
-### Sending Requests
+#### Sending Requests
 
 The easiest way to interact with the example services is the SDK client script:
 
@@ -91,7 +95,7 @@ The workflow will block at the `ctx.promise("email-verified")` call until `verif
 
 </details>
 
-### Stopping
+#### Stopping
 
 ```sh
 yarn docker:down
@@ -119,3 +123,27 @@ yarn test:e2e      # E2E tests (requires Docker)
 ```
 
 SWC is required for tests because Vitest's esbuild transform doesn't support `emitDecoratorMetadata`, which NestJS dependency injection relies on.
+
+## Pull Request Guidelines
+
+- Keep PRs focused on a single change.
+- Include tests for new functionality. If tests are not applicable, explain why in the PR description.
+- Update documentation if the change affects the public API.
+- Ensure CI passes before requesting review.
+- Reference related issues in the PR description (e.g., `Fixes #123`).
+
+## Reporting Bugs
+
+Use the [Bug Report](https://github.com/zackautocracy/nestjs-restate/issues/new?template=bug_report.yml) template. Include a minimal reproduction.
+
+## Requesting Features
+
+Use the [Feature Request](https://github.com/zackautocracy/nestjs-restate/issues/new?template=feature_request.yml) template. Explain the use case and proposed API.
+
+## Questions
+
+For questions and help, use [GitHub Discussions](https://github.com/zackautocracy/nestjs-restate/discussions) instead of issues.
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the [MIT License](LICENSE).
