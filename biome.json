@@ -8,6 +8,11 @@
     "files": {
         "includes": ["**", "!.github/skills"]
     },
+    "javascript": {
+        "parser": {
+            "unsafeParameterDecoratorsEnabled": true
+        }
+    },
     "formatter": {
         "enabled": true,
         "indentStyle": "space",
@@ -20,11 +25,20 @@
             "recommended": true,
             "correctness": {
                 "noUnusedImports": "error",
-                "noUnusedVariables": "warn"
+                "noUnusedVariables": "warn",
+                "noUnusedFunctionParameters": "off"
+            },
+            "complexity": {
+                "noBannedTypes": "warn"
+            },
+            "suspicious": {
+                "noExplicitAny": "off",
+                "noShadowRestrictedNames": "warn"
             },
             "style": {
                 "useConst": "error",
-                "noNonNullAssertion": "warn"
+                "noNonNullAssertion": "warn",
+                "useNodejsImportProtocol": "error"
             }
         }
     },
