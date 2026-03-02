@@ -1,0 +1,17 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": ["config:recommended", ":automergeMinor", "group:allNonMajor", ":semanticCommits"],
+    "labels": ["dependencies"],
+    "packageRules": [
+        {
+            "groupName": "NestJS",
+            "matchPackagePatterns": ["^@nestjs/"],
+            "automerge": false
+        },
+        {
+            "groupName": "Restate SDK",
+            "matchPackagePatterns": ["^@restatedev/"],
+            "automerge": false
+        }
+    ]
+}
