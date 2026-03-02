@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import type { DiscoveryService } from "@nestjs/core";
+import { DiscoveryService } from "@nestjs/core";
 import * as restate from "@restatedev/restate-sdk";
 import {
     HANDLER_METADATA_KEY,

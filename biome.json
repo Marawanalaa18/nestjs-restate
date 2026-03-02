@@ -38,7 +38,8 @@
             "style": {
                 "useConst": "error",
                 "noNonNullAssertion": "warn",
-                "useNodejsImportProtocol": "error"
+                "useNodejsImportProtocol": "error",
+                "useImportType": "off"
             }
         }
     },
