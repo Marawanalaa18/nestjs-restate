@@ -1,7 +1,14 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "extends": ["config:recommended", ":automergeMinor", "group:allNonMajor", ":semanticCommits"],
+    "extends": [
+        "config:recommended",
+        ":automergeMinor",
+        "group:allNonMajor",
+        ":semanticCommits",
+        ":pinGitHubActionDigests"
+    ],
     "labels": ["dependencies"],
+    "minimumReleaseAge": "14 days",
     "packageRules": [
         {
             "groupName": "NestJS",
