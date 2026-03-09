@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { Global, Module } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import * as clients from "@restatedev/restate-sdk-clients";
 import {
     Handler,
     RESTATE_CLIENT,
@@ -15,6 +16,14 @@ import { RestateEndpointManager } from "nestjs-restate/endpoint/restate.endpoint
 import { getClientToken } from "nestjs-restate/proxy/client-token";
 import { RESTATE_OPTIONS } from "nestjs-restate/restate.constants";
 import { computeInterfaceHash } from "nestjs-restate/restate.module";
+
+vi.mock("@restatedev/restate-sdk-clients", async (importOriginal) => {
+    const original = await importOriginal<typeof clients>();
+    return {
+        ...original,
+        connect: vi.fn(original.connect),
+    };
+});
 
 describe("RestateModule", () => {
     describe("forRoot", () => {
@@ -708,6 +717,118 @@ describe("RestateModule", () => {
             stderrSpy.mockRestore();
             stdoutSpy.mockRestore();
         });
+
+        it("should send Authorization header when adminAuthToken is provided", async () => {
+            fetchSpy.mockResolvedValue({
+                ok: true,
+                status: 201,
+                text: () => Promise.resolve(""),
+            });
+
+            const module = await Test.createTestingModule({
+                imports: [
+                    RestateModule.forRoot({
+                        ingress: "http://localhost:8080",
+                        admin: "http://localhost:9070",
+                        adminAuthToken: "my-secret-token",
+                        endpoint: { port: 0 },
+                        autoRegister: {
+                            deploymentUrl: "http://my-host:9080",
+                        },
+                    }),
+                ],
+                providers: [TestSvc],
+            }).compile();
+
+            const app = module.createNestApplication();
+            await app.init();
+
+            expect(fetchSpy).toHaveBeenCalledOnce();
+            const [, options] = fetchSpy.mock.calls[0];
+            expect(options.headers.Authorization).toBe("Bearer my-secret-token");
+
+            await app.close();
+        });
+
+        it("should not send Authorization header when adminAuthToken is not provided", async () => {
+            fetchSpy.mockResolvedValue({
+                ok: true,
+                status: 201,
+                text: () => Promise.resolve(""),
+            });
+
+            const module = await Test.createTestingModule({
+                imports: [
+                    RestateModule.forRoot({
+                        ingress: "http://localhost:8080",
+                        admin: "http://localhost:9070",
+                        endpoint: { port: 0 },
+                        autoRegister: {
+                            deploymentUrl: "http://my-host:9080",
+                        },
+                    }),
+                ],
+                providers: [TestSvc],
+            }).compile();
+
+            const app = module.createNestApplication();
+            await app.init();
+
+            expect(fetchSpy).toHaveBeenCalledOnce();
+            const [, options] = fetchSpy.mock.calls[0];
+            expect(options.headers.Authorization).toBeUndefined();
+
+            await app.close();
+        });
+
+        it("should send Authorization header on production mode GET pre-check", async () => {
+            fetchSpy.mockImplementation(async (_url: string, opts?: any) => {
+                if (!opts || !opts.method || opts.method === "GET") {
+                    return {
+                        ok: true,
+                        json: () =>
+                            Promise.resolve({
+                                deployments: [
+                                    {
+                                        uri: "http://my-host:9080",
+                                        metadata: {
+                                            "nestjs-restate.interface-hash": "sha256:matching-hash",
+                                        },
+                                    },
+                                ],
+                            }),
+                    };
+                }
+                return { ok: true, status: 201, text: () => Promise.resolve("") };
+            });
+
+            const module = await Test.createTestingModule({
+                imports: [
+                    RestateModule.forRoot({
+                        ingress: "http://localhost:8080",
+                        admin: "http://localhost:9070",
+                        adminAuthToken: "cloud-token",
+                        endpoint: { port: 0 },
+                        autoRegister: {
+                            deploymentUrl: "http://my-host:9080",
+                            mode: "production",
+                        },
+                    }),
+                ],
+                providers: [TestSvc],
+            }).compile();
+
+            const app = module.createNestApplication();
+            await app.init();
+
+            const getCall = fetchSpy.mock.calls.find(
+                (c: any[]) => !c[1]?.method || c[1]?.method === "GET",
+            );
+            expect(getCall).toBeDefined();
+            expect(getCall?.[1]?.headers?.Authorization).toBe("Bearer cloud-token");
+
+            await app.close();
+        });
     });
 
     describe("endpoint configuration", () => {
@@ -903,6 +1024,278 @@ describe("RestateModule", () => {
             expect(paymentProxy).toBeDefined();
 
             await module.close();
+        });
+    });
+
+    describe("ingressHeaders", () => {
+        it("should pass ingressHeaders to clients.connect() via forRoot", async () => {
+            const connectMock = vi.mocked(clients.connect);
+            connectMock.mockClear();
+
+            const module = await Test.createTestingModule({
+                imports: [
+                    RestateModule.forRoot({
+                        ingress: "http://localhost:8080",
+                        ingressHeaders: { Authorization: "Bearer ingress-token" },
+                        endpoint: { port: 0 },
+                    }),
+                ],
+            }).compile();
+
+            expect(connectMock).toHaveBeenCalledWith({
+                url: "http://localhost:8080",
+                headers: { Authorization: "Bearer ingress-token" },
+            });
+
+            await module.close();
+        });
+
+        it("should pass ingressHeaders to clients.connect() via forRootAsync", async () => {
+            const connectMock = vi.mocked(clients.connect);
+            connectMock.mockClear();
+
+            const module = await Test.createTestingModule({
+                imports: [
+                    RestateModule.forRootAsync({
+                        useFactory: () => ({
+                            ingress: "http://localhost:8080",
+                            ingressHeaders: { Authorization: "Bearer async-token" },
+                            endpoint: { port: 0 },
+                        }),
+                    }),
+                ],
+            }).compile();
+
+            expect(connectMock).toHaveBeenCalledWith({
+                url: "http://localhost:8080",
+                headers: { Authorization: "Bearer async-token" },
+            });
+
+            await module.close();
+        });
+
+        it("should not pass headers when ingressHeaders is not provided", async () => {
+            const connectMock = vi.mocked(clients.connect);
+            connectMock.mockClear();
+
+            const module = await Test.createTestingModule({
+                imports: [
+                    RestateModule.forRoot({
+                        ingress: "http://localhost:8080",
+                        endpoint: { port: 0 },
+                    }),
+                ],
+            }).compile();
+
+            expect(connectMock).toHaveBeenCalledWith({
+                url: "http://localhost:8080",
+            });
+
+            await module.close();
+        });
+    });
+
+    describe("structured ingress config", () => {
+        it("should accept ingress as an object with url and headers via forRoot", async () => {
+            const connectMock = vi.mocked(clients.connect);
+            connectMock.mockClear();
+
+            const module = await Test.createTestingModule({
+                imports: [
+                    RestateModule.forRoot({
+                        ingress: {
+                            url: "http://cloud:8080",
+                            headers: { Authorization: "Bearer obj-token" },
+                        },
+                        endpoint: { port: 0 },
+                    }),
+                ],
+            }).compile();
+
+            expect(connectMock).toHaveBeenCalledWith({
+                url: "http://cloud:8080",
+                headers: { Authorization: "Bearer obj-token" },
+            });
+
+            await module.close();
+        });
+
+        it("should accept ingress as an object via forRootAsync", async () => {
+            const connectMock = vi.mocked(clients.connect);
+            connectMock.mockClear();
+
+            const module = await Test.createTestingModule({
+                imports: [
+                    RestateModule.forRootAsync({
+                        useFactory: () => ({
+                            ingress: {
+                                url: "http://cloud:8080",
+                                headers: { Authorization: "Bearer async-obj-token" },
+                            },
+                            endpoint: { port: 0 },
+                        }),
+                    }),
+                ],
+            }).compile();
+
+            expect(connectMock).toHaveBeenCalledWith({
+                url: "http://cloud:8080",
+                headers: { Authorization: "Bearer async-obj-token" },
+            });
+
+            await module.close();
+        });
+
+        it("should accept ingress object without headers", async () => {
+            const connectMock = vi.mocked(clients.connect);
+            connectMock.mockClear();
+
+            const module = await Test.createTestingModule({
+                imports: [
+                    RestateModule.forRoot({
+                        ingress: { url: "http://cloud:8080" },
+                        endpoint: { port: 0 },
+                    }),
+                ],
+            }).compile();
+
+            expect(connectMock).toHaveBeenCalledWith({
+                url: "http://cloud:8080",
+            });
+
+            await module.close();
+        });
+
+        it("should warn and ignore ingressHeaders when ingress is an object", async () => {
+            // biome-ignore lint/complexity/useLiteralKeys: accessing private static for testing
+            const warnSpy = vi.spyOn(RestateModule["logger"], "warn");
+
+            const module = await Test.createTestingModule({
+                imports: [
+                    RestateModule.forRoot({
+                        ingress: {
+                            url: "http://cloud:8080",
+                            headers: { Authorization: "Bearer obj-token" },
+                        },
+                        ingressHeaders: { "X-Ignored": "true" },
+                        endpoint: { port: 0 },
+                    }),
+                ],
+            }).compile();
+
+            expect(warnSpy).toHaveBeenCalledWith(
+                "ingressHeaders is ignored when ingress is an object — use ingress.headers instead",
+            );
+
+            warnSpy.mockRestore();
+            await module.close();
+        });
+    });
+
+    describe("structured admin config", () => {
+        const fetchSpy = vi.fn();
+
+        @Service("admin-struct-svc")
+        class AdminStructSvc {
+            @Handler()
+            async handle() {}
+        }
+
+        beforeEach(() => {
+            fetchSpy.mockReset();
+            vi.stubGlobal(
+                "fetch",
+                fetchSpy.mockResolvedValue({
+                    status: 201,
+                    ok: true,
+                    json: async () => ({}),
+                    text: async () => "",
+                }),
+            );
+        });
+
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        it("should send auth header when admin is an object with authToken", async () => {
+            const app = await Test.createTestingModule({
+                imports: [
+                    RestateModule.forRoot({
+                        ingress: "http://localhost:8080",
+                        admin: {
+                            url: "http://localhost:9070",
+                            authToken: "cloud-token",
+                        },
+                        endpoint: { port: 0 },
+                        autoRegister: { deploymentUrl: "http://host:9080" },
+                    }),
+                ],
+                providers: [AdminStructSvc],
+            }).compile();
+
+            const nestApp = app.createNestApplication();
+            await nestApp.init();
+
+            expect(fetchSpy).toHaveBeenCalledOnce();
+            const [, options] = fetchSpy.mock.calls[0];
+            expect(options.headers.Authorization).toBe("Bearer cloud-token");
+
+            await nestApp.close();
+        });
+
+        it("should warn and ignore adminAuthToken when admin is an object", async () => {
+            // biome-ignore lint/complexity/useLiteralKeys: accessing private static for testing
+            const warnSpy = vi.spyOn(RestateModule["logger"], "warn");
+
+            const app = await Test.createTestingModule({
+                imports: [
+                    RestateModule.forRoot({
+                        ingress: "http://localhost:8080",
+                        admin: {
+                            url: "http://localhost:9070",
+                            authToken: "obj-token",
+                        },
+                        adminAuthToken: "flat-token",
+                        endpoint: { port: 0 },
+                        autoRegister: { deploymentUrl: "http://host:9080" },
+                    }),
+                ],
+                providers: [AdminStructSvc],
+            }).compile();
+
+            const nestApp = app.createNestApplication();
+            await nestApp.init();
+
+            expect(warnSpy).toHaveBeenCalledWith(
+                "adminAuthToken is ignored when admin is an object — use admin.authToken instead",
+            );
+
+            warnSpy.mockRestore();
+            await nestApp.close();
+        });
+
+        it("should use admin object url for deployment registration", async () => {
+            const app = await Test.createTestingModule({
+                imports: [
+                    RestateModule.forRoot({
+                        ingress: "http://localhost:8080",
+                        admin: { url: "http://cloud-admin:9070" },
+                        endpoint: { port: 0 },
+                        autoRegister: { deploymentUrl: "http://host:9080" },
+                    }),
+                ],
+                providers: [AdminStructSvc],
+            }).compile();
+
+            const nestApp = app.createNestApplication();
+            await nestApp.init();
+
+            expect(fetchSpy).toHaveBeenCalledOnce();
+            const [url] = fetchSpy.mock.calls[0];
+            expect(url).toBe("http://cloud-admin:9070/deployments");
+
+            await nestApp.close();
         });
     });
 });

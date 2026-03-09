@@ -554,9 +554,9 @@ import {
 
 ```typescript
 RestateModule.forRoot({
-    ingress: 'http://localhost:8080',          // Restate ingress URL
+    ingress: 'http://localhost:8080',          // Restate ingress URL (or { url, headers })
     endpoint: { port: 9080 },                 // HTTP/2 endpoint (see Endpoint Modes below)
-    admin: 'http://localhost:9070',            // Admin API (for auto-registration)
+    admin: 'http://localhost:9070',            // Admin API URL (or { url, authToken })
     autoRegister: {                           // Auto-register deployment on startup
         deploymentUrl: 'http://host.docker.internal:9080',
         force: true,                          // Overwrite existing (default: true)
@@ -609,6 +609,36 @@ endpoint: { type: 'lambda' }       // AWS Lambda (no server)
 ```
 
 > **Why a separate HTTP/2 server?** Restate uses a binary protocol over HTTP/2 bidirectional streaming that can't be mounted as Express/Fastify middleware.
+
+### Restate Cloud
+
+When using [Restate Cloud](https://restate.dev/cloud/), admin and ingress API calls require authentication:
+
+```typescript
+RestateModule.forRoot({
+    ingress: {
+        url: process.env.RESTATE_INGRESS_URL,
+        headers: { Authorization: `Bearer ${process.env.RESTATE_AUTH_TOKEN}` },
+    },
+    admin: {
+        url: process.env.RESTATE_ADMIN_URL,
+        authToken: process.env.RESTATE_AUTH_TOKEN,
+    },
+    endpoint: { port: 9080 },
+    autoRegister: {
+        deploymentUrl: process.env.RESTATE_DEPLOYMENT_URL,
+    },
+})
+```
+
+| Option | Purpose | Affects |
+|--------|---------|--------|
+| `ingress.headers` | Custom headers for ingress client | All service/object/workflow client calls |
+| `admin.authToken` | Bearer token for Restate admin API | `autoRegister` deployment registration |
+
+Both `ingress` and `admin` also accept a plain URL string for non-authenticated setups.
+
+To obtain your authentication token, log in via the [Restate Cloud dashboard](https://cloud.restate.dev) or run `restate cloud login` with the [Restate CLI](https://docs.restate.dev/references/cli).
 
 ### Component-Level Options
 
